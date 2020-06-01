@@ -114,7 +114,7 @@ int main()
         glClear(GL_COLOR_BUFFER_BIT);
 
         glUseProgram(shader_program);
-        check_collision(&(tobjects[0]), &(tobjects[1]));
+        //check_collision(&(tobjects[0]), &(tobjects[1]));
         for (int i = 0; i < obj_cnt; i++)
         {
             redraw(vaos[i], &tobjects[i], shader_program);
