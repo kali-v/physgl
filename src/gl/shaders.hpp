@@ -1,6 +1,6 @@
 #include <iostream>
 
-#include "../lib/glad/glad.h"
+#include "../../lib/glad/glad.h"
 
 const char *vert_shader_src =
     "#version 440 core\n"

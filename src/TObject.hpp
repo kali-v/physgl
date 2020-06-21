@@ -48,57 +48,63 @@ public:
         col_g = _col_g;
         col_b = _col_b;
 
-        create_triangle_collision_area(0.0015);
+        create_circuit_ca(vertices_list.size());
     }
 
-    void create_triangle_collision_area(double density)
+    void create_circuit_ca(int edge_cnt)
     {
-        Coordinate a = Coordinate(
-            get_point_at_index(0),
-            get_point_at_index(1),
-            get_point_at_index(2));
-        Coordinate b = Coordinate(
-            get_point_at_index(3),
-            get_point_at_index(4),
-            get_point_at_index(5));
-        Coordinate c = Coordinate(
-            get_point_at_index(6),
-            get_point_at_index(7),
-            get_point_at_index(8));
-
-        Coordinate left_coor = std::min(a, b, Coordinate::compare_by_x);
-        left_coor = std::min(left_coor, c, Coordinate::compare_by_x);
-        Coordinate right_coor = std::max(a, b, Coordinate::compare_by_x);
-        right_coor = std::max(right_coor, c, Coordinate::compare_by_x);
-
-        Coordinate center_coor = a;
-        if (!c.equals(left_coor) && !c.equals(right_coor))
-            center_coor = c;
-        else if (!b.equals(left_coor) && !b.equals(right_coor))
-            center_coor = b;
-
-        Line *lr_line = new Line(left_coor, right_coor);
-        Line *lc_line = new Line(left_coor, center_coor);
-        Line *rc_line = new Line(right_coor, center_coor);
-
-        push_edge_to_collision_area(lr_line, &left_coor, &right_coor, density);
-        push_edge_to_collision_area(lc_line, &left_coor, &center_coor, density);
-        push_edge_to_collision_area(rc_line, &center_coor, &right_coor, density);
-
-        free(lr_line);
-        free(lc_line);
-        free(rc_line);
-    }
-
-    void push_edge_to_collision_area(Line *line, Coordinate *left_coor, Coordinate *right_coor, double density)
-    {
-        for (float i = left_coor->x; i < right_coor->x; i += density)
+        for (int i = 0; i < edge_cnt; i += 3)
         {
-            Coordinate *c = nullptr;
-            if (line->vertical)
-                c = new Coordinate(line->c, i, 0);
-            else
-                c = new Coordinate(i, line->m * i + line->c, 0);
+            Coordinate a = Coordinate(
+                get_point_at_index(i),
+                get_point_at_index(i + 1),
+                get_point_at_index(i + 2));
+            Coordinate b =
+                (i + 3 == edge_cnt)
+                    ? Coordinate(
+                          get_point_at_index(0),
+                          get_point_at_index(1),
+                          get_point_at_index(2))
+                    : Coordinate(
+                          get_point_at_index(i + 3),
+                          get_point_at_index(i + 4),
+                          get_point_at_index(i + 5));
+
+            Line *line = new Line(a, b);
+
+            push_line_to_ca(line, &a, &b);
+            free(line);
+        }
+    }
+
+    void push_line_to_ca(Line *line, Coordinate *a, Coordinate *b)
+    {
+        double distance = a->get_distance_to(*b);
+        double density = distance / (distance * 1000.0 / 2.0);
+
+        std::function<bool(Coordinate, Coordinate)> cmp_coord =
+            (line->vertical) ? Coordinate::cmp_by_y : Coordinate::cmp_by_x;
+
+        float min_val;
+        float max_val;
+
+        if (cmp_coord(*a, *b))
+        {
+            min_val = (line->vertical) ? a->y : a->x;
+            max_val = (line->vertical) ? b->y : b->x;
+        }
+        else
+        {
+            min_val = (line->vertical) ? b->y : b->x;
+            max_val = (line->vertical) ? a->y : a->x;
+        }
+
+        for (float i = min_val; i < max_val; i += density)
+        {
+            Coordinate *c =
+                (line->vertical)
+                    ? new Coordinate(line->c, i, 0)
+                    : new Coordinate(i, line->m * i + line->c, 0);
             collision_area.push_back(*c);
         }
     }

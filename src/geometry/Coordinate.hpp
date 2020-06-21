@@ -29,8 +29,12 @@ public:
             z == other.z);
     }
 
-    static bool compare_by_x(Coordinate a, Coordinate b)
+    static bool cmp_by_x(Coordinate a, Coordinate b)
     {
         return a.x < b.x;
+    }
+    static bool cmp_by_y(Coordinate a, Coordinate b)
+    {
+        return a.y < b.y;
     }
 };

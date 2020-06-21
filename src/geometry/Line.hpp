@@ -12,11 +12,15 @@ public:
     Line(Coordinate a, Coordinate b)
     {
         m = (a.y - b.y) / (a.x - b.x);
-        if (m == INFINITY)
+        if (std::isinf(m))
         {
+            c = a.x;
             vertical = true;
         }
-        c = -m * a.x + a.y;
+        else
+        {
+            c = -m * a.x + a.y;
+        }
     }
 
     Line(double _m, double _c, bool _vertical)
@@ -30,7 +34,7 @@ public:
     {
         // get perpendicular line slope
         double pm = -1 / m;
-        if (pm == INFINITY)
+        if (std::isinf(pm))
         {
             return new Line(INFINITY, (a.x + b.x) / 2, true);
         }

@@ -1,7 +1,7 @@
 /*
  * PROGRAM
  */
-const bool DEBUG_MODE = true;
+const bool DEBUG_MODE = false;
 
 /*
  * SIMULATION
