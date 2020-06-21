@@ -32,6 +32,7 @@ void check_collision(int VAO, int shader_program, TObject *tobject, TObject *obj
     int color = glGetUniformLocation(shader_program, "color");
     glUniform3f(color, 255, 255, 0);
     glBindVertexArray(VAO);
+
     for (Coordinate &point : tobject->collision_area)
     {
         Coordinate *cur_pos = new Coordinate(
@@ -40,22 +41,25 @@ void check_collision(int VAO, int shader_program, TObject *tobject, TObject *obj
             point.z + (tobject->z));
         for (int i = iter + 1; i < objects_size; i++)
         {
-            for (Coordinate &tpoint : (objects[i]).collision_area)
+            if (tobject->check_potentional_collision(&(objects[i])))
             {
-                Coordinate *cur_tpos = new Coordinate(
-                    tpoint.x + ((objects[i]).x),
-                    tpoint.y + ((objects[i]).y),
-                    tpoint.z + ((objects[i]).z));
-                if (cur_pos->is_near(*cur_tpos))
+                for (Coordinate &tpoint : (objects[i]).collision_area)
                 {
-                    glUniform3f(
-                        new_pos,
-                        cur_tpos->x,
-                        cur_tpos->y,
-                        cur_tpos->z);
-                    glDrawArrays(GL_POINTS, 0, 1);
+                    Coordinate *cur_tpos = new Coordinate(
+                        tpoint.x + ((objects[i]).x),
+                        tpoint.y + ((objects[i]).y),
+                        tpoint.z + ((objects[i]).z));
+                    if (cur_pos->is_near(*cur_tpos))
+                    {
+                        glUniform3f(
+                            new_pos,
+                            cur_tpos->x,
+                            cur_tpos->y,
+                            cur_tpos->z);
+                        glDrawArrays(GL_POINTS, 0, 1);
+                    }
+                    free(cur_tpos);
                 }
-                free(cur_tpos);
             }
         }
         free(cur_pos);
@@ -77,8 +81,8 @@ int main()
     std::list<float> start_obj_square = {
         0.0f, 0.0f, 0.0f,
         0.2f, 0.0f, 0.0f,
-        0.2f, 0.2f, 0.0f,
-        0.0f, 0.2f, 0.0f};
+        0.3f, 0.2f, 0.0f,
+        0.0f, 0.4f, 0.0f};
 
     int obj_cnt = 4;
     TObject tobject = TObject(

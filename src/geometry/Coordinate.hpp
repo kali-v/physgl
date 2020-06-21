@@ -18,7 +18,7 @@ public:
 
     bool is_near(Coordinate b)
     {
-        return get_distance_to(b) < 0.0025;
+        return get_distance_to(b) < 0.006;
     }
 
     bool equals(Coordinate other)
