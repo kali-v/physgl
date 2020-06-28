@@ -32,37 +32,28 @@ void check_collision(int VAO, int shader_program, TObject *tobject, TObject *obj
     int color = glGetUniformLocation(shader_program, "color");
     glUniform3f(color, 255, 255, 0);
     glBindVertexArray(VAO);
-
-    for (Coordinate &point : tobject->collision_area)
+    tobject->create_circuit_ca();
+    for (Line &lineA : tobject->collision_area)
     {
-        Coordinate *cur_pos = new Coordinate(
-            point.x + (tobject->x),
-            point.y + (tobject->y),
-            point.z + (tobject->z));
         for (int i = iter + 1; i < objects_size; i++)
         {
-            if (tobject->check_potentional_collision(&(objects[i])))
+            TObject objectB = (objects[i]);
+            objectB.create_circuit_ca();
+            for (Line &lineB : objectB.collision_area)
             {
-                for (Coordinate &tpoint : (objects[i]).collision_area)
+                double *intersection = lineA.get_segment_intersect(lineB);
+                if (intersection != nullptr)
                 {
-                    Coordinate *cur_tpos = new Coordinate(
-                        tpoint.x + ((objects[i]).x),
-                        tpoint.y + ((objects[i]).y),
-                        tpoint.z + ((objects[i]).z));
-                    if (cur_pos->is_near(*cur_tpos))
-                    {
-                        glUniform3f(
-                            new_pos,
-                            cur_tpos->x,
-                            cur_tpos->y,
-                            cur_tpos->z);
-                        glDrawArrays(GL_POINTS, 0, 1);
-                    }
-                    free(cur_tpos);
+                    glUniform3f(
+                        new_pos,
+                        intersection[0],
+                        intersection[1],
+                        0);
+                    glDrawArrays(GL_POINTS, 0, 1);
                 }
+                free(intersection);
             }
         }
-        free(cur_pos);
     }
 }
 
@@ -97,8 +88,8 @@ int main()
         1,
         start_obj_list2,
         0, 0, 0,
-        1,   //weight
-        0.8, //friction
+        0.5, //weight
+        0.4, //friction
         0.4, //bounciness
         0.1f, 0.1f, 0.8f);
     TObject tobject3 = TObject(

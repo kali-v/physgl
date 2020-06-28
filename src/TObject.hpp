@@ -9,7 +9,7 @@ public:
 
     float *vertices;
     std::list<float> vertices_list;
-    std::list<Coordinate> collision_area;
+    std::list<Line> collision_area;
     size_t vertices_size;
 
     TObject() = default;
@@ -47,66 +47,32 @@ public:
         col_r = _col_r;
         col_g = _col_g;
         col_b = _col_b;
-
-        create_circuit_ca();
     }
 
     void create_circuit_ca()
     {
+        collision_area.clear();
         int edge_cnt = vertices_list.size();
         for (int i = 0; i < edge_cnt; i += 3)
         {
             Coordinate a = Coordinate(
-                get_point_at_index(i),
-                get_point_at_index(i + 1),
-                get_point_at_index(i + 2));
+                get_point_at_index(i) + x,
+                get_point_at_index(i + 1) + y,
+                get_point_at_index(i + 2) + z);
             Coordinate b =
                 (i + 3 == edge_cnt)
                     ? Coordinate(
-                          get_point_at_index(0),
-                          get_point_at_index(1),
-                          get_point_at_index(2))
+                          get_point_at_index(0) + x,
+                          get_point_at_index(1) + y,
+                          get_point_at_index(2) + z)
                     : Coordinate(
-                          get_point_at_index(i + 3),
-                          get_point_at_index(i + 4),
-                          get_point_at_index(i + 5));
+                          get_point_at_index(i + 3) + x,
+                          get_point_at_index(i + 4) + y,
+                          get_point_at_index(i + 5) + z);
 
             Line *line = new Line(a, b);
 
-            push_line_to_ca(line, &a, &b);
-            free(line);
-        }
-    }
-
-    void push_line_to_ca(Line *line, Coordinate *a, Coordinate *b)
-    {
-        double distance = a->get_distance_to(*b);
-        double density = distance / (distance * 300.0);
-
-        std::function<bool(Coordinate, Coordinate)> cmp_coord =
-            (line->vertical) ? Coordinate::cmp_by_y : Coordinate::cmp_by_x;
-
-        float min_val;
-        float max_val;
-
-        if (cmp_coord(*a, *b))
-        {
-            min_val = (line->vertical) ? a->y : a->x;
-            max_val = (line->vertical) ? b->y : b->x;
-        }
-        else
-        {
-            min_val = (line->vertical) ? b->y : b->x;
-            max_val = (line->vertical) ? a->y : a->x;
-        }
-
-        for (float i = min_val; i < max_val; i += density)
-        {
-            Coordinate *c =
-                (line->vertical)
-                    ? new Coordinate(line->c, i, 0)
-                    : new Coordinate(i, line->m * i + line->c, 0);
-            collision_area.push_back(*c);
+            collision_area.push_back(*line);
         }
     }
 
@@ -168,41 +134,6 @@ public:
                 y_force = 0;
             }
         }
-    }
-
-    void check_object_collision(TObject *object)
-    {
-    }
-
-    bool check_potentional_collision(TObject *object)
-    {
-        double min_x, max_x, min_y, max_y;
-        double omin_x, omax_x, omin_y, omax_y;
-
-        get_edges(&min_x, &max_x, &min_y, &max_y);
-        object->get_edges(&omin_x, &omax_x, &omin_y, &omax_y);
-
-        if ((omin_x <= max_x && omin_x >= min_x) ||
-            (omax_x >= min_x && omax_x <= max_x))
-        {
-            if ((omin_y <= max_y && omin_y >= min_y) ||
-                (omax_y >= min_y && omax_y <= max_y))
-            {
-                return true;
-            }
-        }
-
-        if ((min_x <= omax_x && min_x >= omin_x) ||
-            (max_x >= omin_x && max_x <= omax_x))
-        {
-            if ((min_y <= omax_y && min_y >= omin_y) ||
-                (max_y >= omin_y && max_y <= omax_y))
-            {
-                return true;
-            }
-        }
-
-        return false;
     }
 
     void get_edges(double *min_x, double *max_x, double *min_y, double *max_y)

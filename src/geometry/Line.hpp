@@ -6,11 +6,14 @@ class Line
 {
 public:
     double m, c;
+    Coordinate a, b;
     bool vertical = false;
     Line() = default;
 
     Line(Coordinate a, Coordinate b)
     {
+        this->a = a;
+        this->b = b;
         m = (a.y - b.y) / (a.x - b.x);
         if (std::isinf(m))
         {
@@ -50,6 +53,52 @@ public:
         // get c of perpendicular line
         double pc = -pm * (max_x - cx) + (max_y - cy);
         return new Line(pm, pc, false);
+    }
+
+    double *get_vertical_segment_intersect(double x_inter, double y_inter, double ay, double by)
+    {
+        if (y_inter < std::max(ay, by) &&
+            y_inter > std::min(ay, by))
+        {
+            double *inter = (double *)malloc(sizeof(double) * 2);
+            inter[0] = x_inter;
+            inter[1] = y_inter;
+            return inter;
+        }
+        return nullptr;
+    }
+
+    double *get_segment_intersect(Line lineSegment)
+    {
+        double xs[4] = {a.x, b.x, lineSegment.a.x, lineSegment.b.x};
+        double ys[4] = {a.y, b.y, lineSegment.a.y, lineSegment.b.y};
+
+        if (vertical || lineSegment.vertical)
+        {
+            double y_inter = vertical ? lineSegment.m * c + lineSegment.c
+                                      : m * lineSegment.c + c;
+
+            return get_vertical_segment_intersect(
+                (vertical) ? c : lineSegment.c,
+                y_inter,
+                (vertical) ? ys[2] : ys[0],
+                (vertical) ? ys[3] : ys[1]);
+        }
+        if (m == lineSegment.m)
+            return nullptr;
+
+        double x_inter = (lineSegment.c - c) / (m - lineSegment.m);
+        if (x_inter < std::max(std::min(xs[0], xs[1]), std::min(xs[2], xs[3])) ||
+            x_inter > std::min(std::max(xs[0], xs[1]), std::max(xs[2], xs[3])))
+        {
+            return nullptr;
+        }
+        
+        double y_inter = m * x_inter + c;
+        double *inter = (double *)malloc(sizeof(double) * 2);
+        inter[0] = x_inter;
+        inter[1] = y_inter;
+        return inter;
     }
 
     void print_line()
