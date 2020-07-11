@@ -3,40 +3,39 @@ class TObject
 public:
     int id;
     float col_r, col_g, col_b;
-    double x, y, z;
     double x_force, y_force, z_force;
     double weight, friction, bounciness;
+    float rotation_force;
 
     float *vertices;
     std::list<float> vertices_list;
     std::list<Line> collision_area;
-    size_t vertices_size;
+    int vertices_count;
 
     TObject() = default;
 
     TObject(
         int _id,
         std::list<float> &_vertices,
-        double _x, double _y, double _z,
         double _weight,
         double _friction,
         double _bounciness,
+        //double _rotation,
+        //double _rotation_force,
         float _col_r, float _col_g, float _col_b)
     {
         id = _id;
-        //shape
-        vertices_list = _vertices;
-        vertices_size = _vertices.size() * sizeof(float);
-        vertices = (float *)malloc(vertices_size);
+
+        vertices_count = _vertices.size();
+        vertices = (float *)malloc(vertices_count * sizeof(float));
         std::copy(_vertices.begin(), _vertices.end(), vertices);
 
         // init positions and forces
-        x = _x;
-        y = _y;
-        z = _z;
         x_force = -0.002;
         y_force = -0.002;
         z_force = 0;
+
+        rotation_force = 5;
 
         // physical properties
         friction = _friction;
@@ -52,23 +51,22 @@ public:
     void create_circuit_ca()
     {
         collision_area.clear();
-        int edge_cnt = vertices_list.size();
-        for (int i = 0; i < edge_cnt; i += 3)
+        for (int i = 0; i < vertices_count; i += 3)
         {
             Coordinate a = Coordinate(
-                get_point_at_index(i) + x,
-                get_point_at_index(i + 1) + y,
-                get_point_at_index(i + 2) + z);
+                vertices[i],
+                vertices[i + 1],
+                vertices[i + 2]);
             Coordinate b =
-                (i + 3 == edge_cnt)
+                (i + 3 == vertices_count)
                     ? Coordinate(
-                          get_point_at_index(0) + x,
-                          get_point_at_index(1) + y,
-                          get_point_at_index(2) + z)
+                          vertices[0],
+                          vertices[1],
+                          vertices[2])
                     : Coordinate(
-                          get_point_at_index(i + 3) + x,
-                          get_point_at_index(i + 4) + y,
-                          get_point_at_index(i + 5) + z);
+                          vertices[i + 3],
+                          vertices[i + 4],
+                          vertices[i + 5]);
 
             Line *line = new Line(a, b);
 
@@ -76,19 +74,43 @@ public:
         }
     }
 
-    float get_point_at_index(int index)
+    void check_ground_collision()
     {
-        auto point_ptr = vertices_list.begin();
-        std::advance(point_ptr, index);
-        return *point_ptr;
+        for (int i = 1; i < vertices_count; i += 3)
+        {
+            double cy = vertices[i];
+            if (cy < -1)
+            {
+                rotation_force /= 1.5;
+                for (int j = 1; j <= vertices_count; j += 3)
+                {
+                    vertices[j] -= 1 + cy;
+                }
+                double abs_y_force = (y_force < 0) ? -y_force : y_force;
+                double abs_x_force = (x_force < 0) ? -x_force : x_force;
+                if (abs_y_force > 0.0003)
+                {
+                    y_force = -bounciness * y_force;
+                    if (x_force > 0)
+                    {
+                        x_force = -1 * ((1 - friction) * (1 - SURF_FRICTION)) * (bounciness - 1) * y_force;
+                    }
+                    else
+                    {
+                        x_force = ((1 - friction) * (1 - SURF_FRICTION)) * (bounciness - 1) * y_force;
+                    }
+                }
+                else
+                {
+                    y_force = 0;
+                }
+            }
+        }
     }
 
     void apply_y_force()
     {
         y_force -= (weight * G_FORCE);
-
-        if (y < -1)
-            y_force = 0;
     }
 
     void apply_x_force()
@@ -109,71 +131,63 @@ public:
             x_force = 0;
     }
 
-    void check_ground_collision()
+    void apply_rotation_force()
     {
-        if (y < -1)
+        rotation_force /= 1.01;
+        if (rotation_force < 0.00015)
         {
-            y = -1;
+            rotation_force = 0;
+        }
 
-            double abs_y_force = (y_force < 0) ? -y_force : y_force;
-            double abs_x_force = (x_force < 0) ? -x_force : x_force;
-            if (abs_y_force > 0.00015)
-            {
-                y_force = -bounciness * y_force;
-                if (x_force > 0)
-                {
-                    x_force = -1 * ((1 - friction) * (1 - SURF_FRICTION)) * (bounciness - 1) * y_force;
-                }
-                else
-                {
-                    x_force = ((1 - friction) * (1 - SURF_FRICTION)) * (bounciness - 1) * y_force;
-                }
-            }
-            else
-            {
-                y_force = 0;
-            }
+        Coordinate point = get_center_of_gravity();
+
+        glm::mat4 rotation_matrix = glm::mat4(1.0f);
+        rotation_matrix = glm::translate(rotation_matrix, glm::vec3(point.x, point.y, point.z));
+        rotation_matrix = glm::rotate(rotation_matrix, glm::radians(rotation_force), glm::vec3(0.0f, 0.0f, 1.0f));
+        rotation_matrix = glm::translate(rotation_matrix, glm::vec3(-point.x, -point.y, -point.z));
+
+        apply_matrix(rotation_matrix);
+    }
+
+    void apply_matrix(glm::mat4 model)
+    {
+        for (int i = 0; i < vertices_count; i += 3)
+        {
+            glm::vec4 cvec = glm::vec4(vertices[i], vertices[i + 1], vertices[i + 2], 1);
+            cvec = model * cvec;
+            vertices[i] = cvec.x;
+            vertices[i + 1] = cvec.y;
+            vertices[i + 2] = cvec.z;
         }
     }
 
-    void get_edges(double *min_x, double *max_x, double *min_y, double *max_y)
+    Coordinate get_center_of_gravity()
     {
-        Coordinate point = Coordinate(
-            get_point_at_index(0),
-            get_point_at_index(1),
-            get_point_at_index(2));
-        *min_x = point.x;
-        *max_x = point.x;
-        *min_y = point.y;
-        *max_y = point.y;
-        for (int i = 3; i < vertices_list.size(); i += 3)
+        float x_sum, y_sum, z_sum = 0;
+        for (int i = 0; i < vertices_count; i += 3)
         {
-            point = Coordinate(
-                get_point_at_index(i),
-                get_point_at_index(i + 1),
-                get_point_at_index(i + 2));
-            if (point.x < *min_x)
-                *min_x = point.x;
-            if (point.x > *max_x)
-                *max_x = point.x;
-            if (point.y < *min_y)
-                *min_y = point.y;
-            if (point.y > *max_y)
-                *max_y = point.y;
+            x_sum += vertices[i];
+            y_sum += vertices[i + 1];
+            z_sum += vertices[i + 2];
         }
-        *min_x += x;
-        *max_x += x;
-        *min_y += y;
-        *max_y += y;
+
+        return Coordinate(
+            x_sum / (vertices_count / 3),
+            y_sum / (vertices_count / 3),
+            z_sum / (vertices_count / 3));
     }
 
     void update_position()
     {
         check_ground_collision();
+        apply_rotation_force();
         apply_y_force();
         apply_x_force();
 
-        x += x_force;
-        y += y_force;
+        for (int i = 0; i < vertices_count; i += 3)
+        {
+            vertices[i] += x_force;
+            vertices[i + 1] += y_force;
+        }
     }
 };

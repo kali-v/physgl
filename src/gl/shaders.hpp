@@ -5,13 +5,13 @@
 const char *vert_shader_src =
     "#version 440 core\n"
     "layout (location = 0) in vec3 def_pos;\n"
-    "uniform vec3 cur_pos;"
+    "uniform vec3 cur_pos;\n"
     "void main()\n"
     "{\n"
     "   gl_Position = vec4( \n"
-    "        def_pos.x + cur_pos.x, \n"
-    "        def_pos.y + cur_pos.y, \n"
-    "        def_pos.z + cur_pos.z, \n"
+    "        def_pos.x, \n"
+    "        def_pos.y, \n"
+    "        def_pos.z, \n"
     "        1.0); \n"
     "}\0";
 
@@ -27,7 +27,7 @@ const char *frag_shader_src =
 int create_shader_program()
 {
     unsigned int vertex_shader_id = glCreateShader(GL_VERTEX_SHADER);
-    glShaderSource(vertex_shader_id, 1, &vert_shader_src, NULL);
+    glShaderSource(vertex_shader_id, 1, &vert_shader_src, nullptr);
     glCompileShader(vertex_shader_id);
 
     int success;
@@ -35,13 +35,13 @@ int create_shader_program()
     glGetShaderiv(vertex_shader_id, GL_COMPILE_STATUS, &success);
     if (!success)
     {
-        glGetShaderInfoLog(vertex_shader_id, 512, NULL, infoLog);
+        glGetShaderInfoLog(vertex_shader_id, 512, nullptr, infoLog);
         std::cout << "ERROR::SHADER::VERTEX::COMPILATION_FAILED\n"
                   << infoLog << std::endl;
     }
 
     unsigned int fragment_shader = glCreateShader(GL_FRAGMENT_SHADER);
-    glShaderSource(fragment_shader, 1, &frag_shader_src, NULL);
+    glShaderSource(fragment_shader, 1, &frag_shader_src, nullptr);
     glCompileShader(fragment_shader);
 
     unsigned int shader_program = glCreateProgram();

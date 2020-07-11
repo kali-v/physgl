@@ -10,10 +10,10 @@ public:
     bool vertical = false;
     Line() = default;
 
-    Line(Coordinate a, Coordinate b)
+    Line(Coordinate _a, Coordinate _b)
     {
-        this->a = a;
-        this->b = b;
+        a = _a;
+        b = _b;
         m = (a.y - b.y) / (a.x - b.x);
         if (std::isinf(m))
         {
@@ -93,7 +93,7 @@ public:
         {
             return nullptr;
         }
-        
+
         double y_inter = m * x_inter + c;
         double *inter = (double *)malloc(sizeof(double) * 2);
         inter[0] = x_inter;

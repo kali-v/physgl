@@ -18,21 +18,19 @@
 
 void redraw(int VAO, TObject *tobject, int shader_program)
 {
-    int new_pos = glGetUniformLocation(shader_program, "cur_pos");
     int color = glGetUniformLocation(shader_program, "color");
-    glUniform3f(new_pos, tobject->x, tobject->y, tobject->z);
     glUniform3f(color, tobject->col_r, tobject->col_g, tobject->col_b);
+
     glBindVertexArray(VAO);
-    glDrawArrays(GL_LINE_LOOP, 0, tobject->vertices_size / sizeof(float));
+    glDrawArrays(GL_LINE_LOOP, 0, tobject->vertices_count / 3);
 }
 
-void check_collision(int VAO, int shader_program, TObject *tobject, TObject *objects, int objects_size, int iter)
+void check_collision(int shader_program, TObject *tobject, TObject *objects, int objects_size, int iter)
 {
-    int new_pos = glGetUniformLocation(shader_program, "cur_pos");
     int color = glGetUniformLocation(shader_program, "color");
     glUniform3f(color, 255, 255, 0);
-    glBindVertexArray(VAO);
     tobject->create_circuit_ca();
+
     for (Line &lineA : tobject->collision_area)
     {
         for (int i = iter + 1; i < objects_size; i++)
@@ -44,14 +42,12 @@ void check_collision(int VAO, int shader_program, TObject *tobject, TObject *obj
                 double *intersection = lineA.get_segment_intersect(lineB);
                 if (intersection != nullptr)
                 {
-                    glUniform3f(
-                        new_pos,
-                        intersection[0],
-                        intersection[1],
-                        0);
+                    float col_point[3] = {(float)intersection[0], (float)intersection[1], 0};
+                    int c_vao = gen_vao(col_point, 3 * sizeof(float));
+                    glBindVertexArray(c_vao);
                     glDrawArrays(GL_POINTS, 0, 1);
+                    free(intersection);
                 }
-                free(intersection);
             }
         }
     }
@@ -79,15 +75,13 @@ int main()
     TObject tobject = TObject(
         0,
         start_obj_list,
-        0, 0, 0,
-        1.5, //weight
+        1.0, //weight
         0.6, //friction
         0.6, //bounciness
         0.8f, 0.1f, 0.1f);
     TObject tobject2 = TObject(
         1,
         start_obj_list2,
-        0, 0, 0,
         0.5, //weight
         0.4, //friction
         0.4, //bounciness
@@ -95,7 +89,6 @@ int main()
     TObject tobject3 = TObject(
         2,
         start_obj_list2,
-        -0.4, -0.2, 0,
         1,   //weight
         0.4, //friction
         0.1, //bounciness
@@ -103,7 +96,6 @@ int main()
     TObject tobject4 = TObject(
         3,
         start_obj_square,
-        0, -0.2, 0,
         0.2, //weight
         0.4, //friction
         0.5, //bounciness
@@ -114,11 +106,6 @@ int main()
     int vaos[obj_cnt];
     GLFWwindow *window = create_window();
     int shader_program = create_shader_program();
-
-    for (int i = 0; i < obj_cnt; i++)
-    {
-        vaos[i] = gen_vao(tobjects[i].vertices, tobjects[i].vertices_size);
-    }
 
     int previous_time = glfwGetTime();
     int frame_count = 0;
@@ -133,11 +120,12 @@ int main()
             TObject *object = &tobjects[i];
             object->update_position();
 
+            vaos[i] = gen_vao(object->vertices, object->vertices_count * sizeof(float));
             redraw(vaos[i], object, shader_program);
         }
         for (int i = 0; i < obj_cnt; i++)
         {
-            check_collision(vaos[i], shader_program, &tobjects[i], tobjects, obj_cnt, i);
+            check_collision(shader_program, &tobjects[i], tobjects, obj_cnt, i);
         }
 
         frame_count++;
