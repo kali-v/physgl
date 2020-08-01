@@ -146,8 +146,9 @@ public:
                     vertices[j] -= 1 + cy;
                 }
 
-                double abs_y_force = (y_force < 0) ? -y_force : y_force;
-                if (abs_y_force > 0.0003)
+                x_force = x_force * (1 - (friction / 5));
+
+                if (fabs(y_force) > 0.0003)
                 {
                     y_force = -bounciness * y_force;
                     if (x_force > 0)
@@ -194,16 +195,19 @@ public:
     {
         if (last_collision > COLLISION_DELAY)
         {
-            last_collision = 0;
+            double diff_y =
+                (y_force > other_body->y_force)
+                    ? y_force - other_body->y_force
+                    : other_body->y_force - y_force;
 
             double bounce = other_body->bounciness * bounciness * -1;
 
-            if (other_body->last_ground_collision < COLLISION_DELAY || other_body->fixed)
+            if (other_body->last_ground_collision < 3 || other_body->fixed)
             {
                 x_force *= bounce;
                 y_force *= bounce;
             }
-            else if (last_ground_collision < COLLISION_DELAY || fixed)
+            else if (last_ground_collision < 3 || fixed)
             {
                 other_body->x_force *= bounce;
                 other_body->y_force *= bounce;
@@ -218,14 +222,15 @@ public:
             {
                 x_force += diff_x / 100;
                 rotation_force /= 1.05;
-                rotation_force -= 0.035 + (diff_x / 4);
+                rotation_force -= 0.035 + (diff_x / 2) + (diff_y * 10);
             }
             else if (diff_x < -0.0001)
             {
                 x_force += diff_x / 100;
                 rotation_force /= 1.05;
-                rotation_force += 0.035 + (diff_x / 4);
+                rotation_force += 0.035 + (diff_x / 2)  + (diff_y * 10);
             }
+            last_collision = 0;
         }
     }
 
@@ -330,9 +335,9 @@ public:
             return;
 
         check_ground_collision();
+        calculate_rotation_force();
         if (last_collision > COLLISION_DELAY)
         {
-            calculate_rotation_force();
             calculate_y_force();
             calculate_x_force();
         }
