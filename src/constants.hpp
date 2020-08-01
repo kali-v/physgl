@@ -10,3 +10,4 @@ const double SIM_SCALE = 40 * 10e-7;
 const double G_FORCE = 9.98 * SIM_SCALE;
 const double SURF_FRICTION = 0.9 * SIM_SCALE;
 const double AIR_FRICTION = 0.1 * SIM_SCALE;
+const double COLLISION_DELAY = 8;

@@ -4,7 +4,7 @@ public:
     int id;
     float col_r, col_g, col_b;
     double x_force, y_force, z_force;
-    double weight, friction, bounciness;
+    double mass, friction, bounciness;
     float rotation_force;
     bool fixed;
 
@@ -13,14 +13,15 @@ public:
     int vertices_count;
 
     int last_collision = 0;
+    int last_ground_collision = 0;
 
     RigidBody() = default;
 
     RigidBody(
         int _id,
         std::list<float> &_vertices,
+        double _mass,
         double _friction,
-        double _weight,
         double _bounciness)
     {
         id = _id;
@@ -31,7 +32,7 @@ public:
 
         // physical properties
         friction = _friction;
-        weight = _weight;
+        mass = _mass;
         bounciness = _bounciness;
 
         fixed = false;
@@ -164,54 +165,76 @@ public:
                 }
             }
         }
-        return left_touch || right_touch;
+        if (left_touch || right_touch)
+        {
+            last_ground_collision = 0;
+            return true;
+        }
+        return false;
+    }
+
+    void apply_elastic_collision(RigidBody *other_body)
+    {
+        double sw = (mass + other_body->mass);
+
+        double xa = (mass - other_body->mass) / sw;
+        double xb = (2 * other_body->mass) / sw;
+
+        x_force = (xa * x_force) + (xb * other_body->x_force);
+        y_force = (xa * y_force) + (xb * other_body->y_force);
+
+        xa = (2 * mass) / sw;
+        xb = (other_body->mass - mass) / sw;
+
+        other_body->x_force = (xa * x_force) + (xb * other_body->x_force);
+        other_body->y_force = (xa * y_force) + (xb * other_body->y_force);
     }
 
     void collide(RigidBody *other_body, double x, double y)
     {
-        if (last_collision > 10)
+        if (last_collision > COLLISION_DELAY)
         {
             last_collision = 0;
 
-            y_force *= -1;
-            other_body->y_force *= 2 * bounciness * other_body->bounciness;
+            double bounce = other_body->bounciness * bounciness * -1;
 
-            x_force *= -1;
-            other_body->x_force *= 2 * bounciness * other_body->bounciness;
+            if (other_body->last_ground_collision < COLLISION_DELAY || other_body->fixed)
+            {
+                x_force *= bounce;
+                y_force *= bounce;
+            }
+            else if (last_ground_collision < COLLISION_DELAY || fixed)
+            {
+                other_body->x_force *= bounce;
+                other_body->y_force *= bounce;
+            }
+            else
+            {
+                apply_elastic_collision(other_body);
+            }
 
             float diff_x = get_x_center_of_gravity() - x;
             if (diff_x > 0.0001)
             {
+                x_force += diff_x / 100;
                 rotation_force /= 1.05;
-                rotation_force -= 0.03 + (diff_x / 5);
+                rotation_force -= 0.035 + (diff_x / 4);
             }
             else if (diff_x < -0.0001)
             {
+                x_force += diff_x / 100;
                 rotation_force /= 1.05;
-                rotation_force += 0.03 + (diff_x / 5);
+                rotation_force += 0.035 + (diff_x / 4);
             }
         }
     }
 
-    void apply_bounce()
+    void calculate_y_force()
     {
-        y_force = -bounciness * y_force;
-        if (x_force > 0)
-        {
-            x_force = -1 * ((1 - friction) * (1 - SURF_FRICTION)) * (bounciness - 1) * (y_force * x_force);
-        }
-        else
-        {
-            x_force = ((1 - friction) * (1 - SURF_FRICTION)) * (bounciness - 1) * (y_force * x_force);
-        }
+        y_force -= 0.5 * G_FORCE;
     }
 
-    void apply_y_force()
-    {
-        y_force -= (weight * G_FORCE);
-    }
-
-    void apply_x_force()
+    void calculate_x_force()
     {
         double abs_x_force = (x_force < 0) ? -x_force : x_force;
         if (abs_x_force < 0.00015)
@@ -229,7 +252,7 @@ public:
             x_force = 0;
     }
 
-    void apply_rotation_force()
+    void calculate_rotation_force()
     {
         bool rotation_dir = rotation_force > 0;
         double rotation_friction = AIR_FRICTION * 50;
@@ -290,23 +313,30 @@ public:
         return x_sum / (vertices_count / 3);
     }
 
-    void update_position()
+    void apply_forces()
     {
-        if (fixed)
-            return;
-        check_ground_collision();
-        if (last_collision > 5)
-        {
-            apply_rotation_force();
-            apply_y_force();
-            apply_x_force();
-        }
-
         for (int i = 0; i < vertices_count; i += 3)
         {
             vertices[i] += x_force;
             vertices[i + 1] += y_force;
         }
         last_collision++;
+        last_ground_collision++;
+    }
+
+    void update_position()
+    {
+        if (fixed)
+            return;
+
+        check_ground_collision();
+        if (last_collision > COLLISION_DELAY)
+        {
+            calculate_rotation_force();
+            calculate_y_force();
+            calculate_x_force();
+        }
+
+        apply_forces();
     }
 };

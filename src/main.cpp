@@ -62,7 +62,7 @@ int main()
     RigidBody *r_body = new RigidBody(
         0,
         triangle_struct1,
-        0.3, //weight
+        0.3, //mass
         0.6, //friction
         0.5  //bounciness
     );
@@ -73,9 +73,9 @@ int main()
     RigidBody *r_body2 = new RigidBody(
         1,
         triangle_struct2,
-        0.5, //weight
+        0.8, //mass
         0.4, //friction
-        0.4  //bounciness
+        0.5  //bounciness
     );
     r_body2->set_color(0.1f, 0.1f, 0.8f);
     r_body2->set_positon(-0.3, 0.8, 0);
@@ -84,9 +84,9 @@ int main()
     RigidBody *r_body3 = new RigidBody(
         2,
         triangle_struct2,
-        1,    //weight
+        1,    //mass
         0.05, //friction
-        0.2   //bounciness
+        0.6   //bounciness
     );
     r_body3->set_color(0.3f, 0.3f, 0.1f);
     r_body3->set_positon(-0.1, 0.5, 0);
@@ -96,7 +96,7 @@ int main()
     RigidBody *r_body4 = new RigidBody(
         3,
         square_struct1,
-        0.3, //weight
+        0.3, //mass
         0.4, //friction
         0.7  //bounciness
     );
