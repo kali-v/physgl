@@ -1,3 +1,6 @@
+#ifndef CONST_HPP
+#define CONST_HPP
+
 const bool DEBUG_MODE = false;
 
 const double SIM_SCALE = 40e-6;
@@ -12,3 +15,5 @@ const int COLLISION_DELAY = 8;
 const double EQ_TRESH = 1e-5;
 
 const float CONTROL_FORCE = 0.001;
+
+#endif

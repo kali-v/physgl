@@ -10,16 +10,17 @@
 #include <list>
 
 #include "constants.hpp"
-#include "geometry/Coordinate.hpp"
-#include "geometry/Line.hpp"
+#include "geometry/coordinate.hpp"
+#include "geometry/line.hpp"
 #include "gl/common.hpp"
 #include "gl/shaders.hpp"
 
-#include "RigidBody.hpp"
+#include "rigid_body.hpp"
+
 #include "geometry/common.hpp"
 #include "geometry/structures.hpp"
 
-RigidBody** r_bodies;
+std::vector<RigidBody*> rbodies;
 
 void redraw(int VAO, RigidBody* r_body, int shader_program) {
     int color = glGetUniformLocation(shader_program, "color");
@@ -45,18 +46,17 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
 }
 
 void update_control() {
-    if (control_act[0]) r_bodies[0]->x_force -= CONTROL_FORCE / 2;
-    if (control_act[1]) r_bodies[0]->x_force += CONTROL_FORCE / 2;
-    if (control_act[2]) r_bodies[0]->y_force += CONTROL_FORCE;
-    if (control_act[3]) r_bodies[0]->y_force -= CONTROL_FORCE;
-    if (control_act[4]) r_bodies[0]->rotation_force -= CONTROL_FORCE * 50;
-    if (control_act[5]) r_bodies[0]->rotation_force += CONTROL_FORCE * 50;
+    if (control_act[0]) rbodies[0]->x_force -= CONTROL_FORCE / 2;
+    if (control_act[1]) rbodies[0]->x_force += CONTROL_FORCE / 2;
+    if (control_act[2]) rbodies[0]->y_force += CONTROL_FORCE;
+    if (control_act[3]) rbodies[0]->y_force -= CONTROL_FORCE;
+    if (control_act[4]) rbodies[0]->rotation_force -= CONTROL_FORCE * 50;
+    if (control_act[5]) rbodies[0]->rotation_force += CONTROL_FORCE * 50;
 }
 
 int main() {
-    int obj_cnt = 4;
-    r_bodies = (RigidBody**)malloc(obj_cnt * sizeof(RigidBody));
-    create_rigid_bodies(r_bodies, obj_cnt);
+    rbodies = create_rigid_bodies();
+    int obj_cnt = rbodies.size();
 
     int vaos[obj_cnt];
     GLFWwindow* window = create_window();
@@ -71,14 +71,14 @@ int main() {
         glClear(GL_COLOR_BUFFER_BIT);
         glUseProgram(shader_program);
         for (int i = 0; i < obj_cnt; i++) {
-            RigidBody* object = r_bodies[i];
+            RigidBody* object = rbodies[i];
             object->update_position();
 
             vaos[i] = gen_vao(object->vertices, object->vertices_count * sizeof(float));
             redraw(vaos[i], object, shader_program);
         }
         for (int i = 0; i < obj_cnt; i++) {
-            check_collision(shader_program, r_bodies[i], r_bodies, obj_cnt, i);
+            check_collision(shader_program, rbodies[i], rbodies, obj_cnt, i);
         }
 
         frame_count++;

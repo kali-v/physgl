@@ -1,4 +1,5 @@
-void check_collision(int shader_program, RigidBody* r_body, RigidBody** objects, int objects_size, int iter) {
+void check_collision(int shader_program, RigidBody* r_body, std::vector<RigidBody*> objects, int objects_size,
+                     int iter) {
     int color = glGetUniformLocation(shader_program, "color");
     glUniform3f(color, 255, 255, 0);
 
