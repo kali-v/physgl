@@ -20,7 +20,7 @@ std::vector<RigidBody*> create_rigid_bodies() {
     r_body->set_position(0.1, 0.1, 0);
     r_body->set_forces(-0.0025, 0.001, 0, 0.3);
 
-    RigidBody* r_body2 = new RigidBody(1, custom_struct1, 0.7, 0.4);
+    RigidBody* r_body2 = new RigidBody(1, custom_struct1, 0.6, 0.4);
     r_body2->set_color(0.1f, 0.1f, 0.8f);
     r_body2->set_position(0.3, 0.8, 0);
     r_body2->set_forces(-0.005, 0.005, 0, 0.4);

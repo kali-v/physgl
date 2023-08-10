@@ -1,3 +1,8 @@
+#ifndef COMM_HPP
+#define COMM_HPP
+
+#include "../rigid_body.hpp"
+
 void check_collision(int shader_program, RigidBody* r_body, std::vector<RigidBody*> objects, int objects_size,
                      int iter) {
     int color = glGetUniformLocation(shader_program, "color");
@@ -23,3 +28,5 @@ void check_collision(int shader_program, RigidBody* r_body, std::vector<RigidBod
         }
     }
 }
+
+#endif

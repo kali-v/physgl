@@ -1,58 +1,55 @@
 #include "../lib/glad/glad.h"
 #include <GLFW/glfw3.h>
+#include <cmath>
+#include <functional>
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
-
-#include <cmath>
-#include <functional>
 #include <iostream>
 #include <list>
+#include <unordered_map>
 
 #include "constants.hpp"
+#include "variables.hpp"
+
 #include "geometry/coordinate.hpp"
 #include "geometry/line.hpp"
 #include "gl/common.hpp"
 #include "gl/shaders.hpp"
 
-#include "rigid_body.hpp"
-
 #include "geometry/common.hpp"
-#include "geometry/structures.hpp"
+#include "rigid_body.hpp"
+#include "structures.hpp"
 
 std::vector<RigidBody*> rbodies;
 
-void redraw(int VAO, RigidBody* r_body, int shader_program) {
-    int color = glGetUniformLocation(shader_program, "color");
-    glUniform3f(color, r_body->col_r, r_body->col_g, r_body->col_b);
+bool control_act[12];
 
-    glBindVertexArray(VAO);
-    glDrawArrays(GL_LINE_LOOP, 0, r_body->vertices_count / 3);
-}
-
-bool control_act[7];
+std::vector<int> keys_control = {GLFW_KEY_LEFT, GLFW_KEY_RIGHT, GLFW_KEY_UP, GLFW_KEY_DOWN, GLFW_KEY_E, GLFW_KEY_Q,
+                                 GLFW_KEY_A,    GLFW_KEY_Z,     GLFW_KEY_S,  GLFW_KEY_X,    GLFW_KEY_D, GLFW_KEY_C};
 
 void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods) {
-    bool con_action = false;
-    if (action == GLFW_PRESS) con_action = true;
-    else if (action != GLFW_RELEASE) return;
-
-    if (key == GLFW_KEY_LEFT) control_act[0] = con_action;
-    else if (key == GLFW_KEY_RIGHT) control_act[1] = con_action;
-    else if (key == GLFW_KEY_UP) control_act[2] = con_action;
-    else if (key == GLFW_KEY_DOWN) control_act[3] = con_action;
-    else if (key == GLFW_KEY_E) control_act[4] = con_action;
-    else if (key == GLFW_KEY_Q) control_act[5] = con_action;
+    for (int i = 0; i < keys_control.size(); i++) {
+        if (key == keys_control[i]) control_act[i] = (action != GLFW_RELEASE);
+    }
 }
 
 void update_control() {
-    if (control_act[0]) rbodies[0]->x_force -= CONTROL_FORCE / 2;
-    if (control_act[1]) rbodies[0]->x_force += CONTROL_FORCE / 2;
-    if (control_act[2]) rbodies[0]->y_force += CONTROL_FORCE;
-    if (control_act[3]) rbodies[0]->y_force -= CONTROL_FORCE;
-    if (control_act[4]) rbodies[0]->rotation_force -= CONTROL_FORCE * 50;
-    if (control_act[5]) rbodies[0]->rotation_force += CONTROL_FORCE * 50;
+    if (control_act[0]) rbodies[0]->x_force -= control_force / 2;
+    if (control_act[1]) rbodies[0]->x_force += control_force / 2;
+    if (control_act[2]) rbodies[0]->y_force += control_force;
+    if (control_act[3]) rbodies[0]->y_force -= control_force;
+    if (control_act[4]) rbodies[0]->rotation_force -= control_force * 50;
+    if (control_act[5]) rbodies[0]->rotation_force += control_force * 50;
+    if (control_act[6]) control_force *= 1.01;
+    if (control_act[7]) control_force /= 1.01;
+    if (control_act[8]) air_force *= 1.01;
+    if (control_act[9]) air_force /= 1.01;
+    if (control_act[10]) g_force *= 1.01;
+    if (control_act[11]) g_force /= 1.01;
 }
+
+void redraw(int VAO, RigidBody* r_body, int shader_program) {}
 
 int main() {
     rbodies = create_rigid_bodies();
@@ -73,9 +70,10 @@ int main() {
         for (int i = 0; i < obj_cnt; i++) {
             RigidBody* object = rbodies[i];
             object->update_position();
-
             vaos[i] = gen_vao(object->vertices, object->vertices_count * sizeof(float));
-            redraw(vaos[i], object, shader_program);
+            glUniform3f(glGetUniformLocation(shader_program, "color"), object->col_r, object->col_g, object->col_b);
+            glBindVertexArray(vaos[i]);
+            glDrawArrays(GL_LINE_LOOP, 0, object->vertices_count / 3);
         }
         for (int i = 0; i < obj_cnt; i++) {
             check_collision(shader_program, rbodies[i], rbodies, obj_cnt, i);

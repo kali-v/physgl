@@ -2,25 +2,29 @@
 
 #include "../../lib/glad/glad.h"
 
-const char* vert_shader_src = "#version 440 core\n"
-                              "layout (location = 0) in vec3 def_pos;\n"
-                              "uniform vec3 cur_pos;\n"
-                              "void main()\n"
-                              "{\n"
-                              "   gl_Position = vec4( \n"
-                              "        def_pos.x, \n"
-                              "        def_pos.y, \n"
-                              "        def_pos.z, \n"
-                              "        1.0); \n"
-                              "}\0";
+const char* vert_shader_src = R"(
+    #version 440 core
+    layout (location = 0) in vec3 def_pos;
+    uniform vec3 cur_pos;
+    void main()
+    {
+        gl_Position = vec4(
+            def_pos.x,
+            def_pos.y,
+            def_pos.z,
+            1.0);
+    }
+)";
 
-const char* frag_shader_src = "#version 440 core\n"
-                              "out vec4 FragColor;\n"
-                              "uniform vec3 color;\n"
-                              "void main()\n"
-                              "{\n"
-                              "   FragColor = vec4(color.x,color.y,color.z,1.0f);\n"
-                              "}\n\0";
+const char* frag_shader_src = R"(
+    #version 440 core
+    out vec4 FragColor;
+    uniform vec3 color;
+    void main()
+    {
+        FragColor = vec4(color.x, color.y, color.z, 1.0f);
+    }
+)";
 
 int create_shader_program() {
     unsigned int vertex_shader_id = glCreateShader(GL_VERTEX_SHADER);

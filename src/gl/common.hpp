@@ -10,6 +10,7 @@ GLFWwindow* create_window() {
     GLFWwindow* window = glfwCreateWindow(1920, 1200, "M", glfwGetPrimaryMonitor(), nullptr);
 
     glfwMakeContextCurrent(window);
+    glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_HIDDEN);
 
     if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)) exit(1);
 

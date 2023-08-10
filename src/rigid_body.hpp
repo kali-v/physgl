@@ -1,11 +1,10 @@
 #ifndef RIGIDBODY_HPP
 #define RIGIDBODY_HPP
 
-#include "constants.hpp"
-#include "geometry/line.hpp"
 #include "geometry/coordinate.hpp"
-#include <vector>
+#include "geometry/line.hpp"
 #include <glm/gtc/matrix_transform.hpp>
+#include <vector>
 
 class RigidBody {
   public:

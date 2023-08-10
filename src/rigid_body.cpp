@@ -1,10 +1,13 @@
 #include <cmath>
 #include <list>
 
-#include "rigid_body.hpp"
+#include "constants.hpp"
 #include "geometry/coordinate.hpp"
-#include <vector>
+#include "rigid_body.hpp"
+#include "variables.hpp"
 #include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+#include <vector>
 
 RigidBody::RigidBody(int _id, std::list<float>& _vertices, double _mass, double _friction) {
     id = _id;
@@ -75,10 +78,10 @@ bool RigidBody::check_ground_collision() {
             float diff_x = get_x_center_of_gravity() - vertices[i - 1];
             if (diff_x > EQ_TRESH) {
                 left_touch = true;
-                rotation_force -= (.1f + diff_x / ROT_FACTOR) / mass;
+                rotation_force -= (.1f + diff_x / rot_factor) / mass;
             } else if (diff_x < -EQ_TRESH) {
                 right_touch = true;
-                rotation_force += (.1f + diff_x / ROT_FACTOR) / mass;
+                rotation_force += (.1f + diff_x / rot_factor) / mass;
             }
 
             for (int j = 1; j <= vertices_count; j += 3) {
@@ -117,11 +120,11 @@ void RigidBody::collide(RigidBody* other_body, double x, double y) {
         float diff_y = get_y_center_of_gravity() - y;
 
         double force_diff = fabs(x_force - other_body->x_force) + fabs(y_force - other_body->y_force);
-        rotation_force -= (ROT_FACTOR * (get_x_center_of_gravity() - x) / mass) / (rotation_force + 1);
+        rotation_force -= (rot_factor * (get_x_center_of_gravity() - x) / mass) / (rotation_force + 1);
         other_body->rotation_force -=
-            (ROT_FACTOR * (other_body->get_x_center_of_gravity() - x) / mass) / (other_body->rotation_force + 1);
+            (rot_factor * (other_body->get_x_center_of_gravity() - x) / mass) / (other_body->rotation_force + 1);
         // other_body->rotation_force -=
-        ROT_FACTOR*(other_body->get_x_center_of_gravity() - x) / mass / (other_body->rotation_force + 1);
+        rot_factor*(other_body->get_x_center_of_gravity() - x) / mass / (other_body->rotation_force + 1);
 
         double sw = mass + other_body->mass;
 
@@ -131,38 +134,33 @@ void RigidBody::collide(RigidBody* other_body, double x, double y) {
         double tmp_x_force = x_force;
         double tmp_y_force = y_force;
 
-        x_force = ((xa * x_force) + (xb * other_body->x_force)) + diff_x * X_FACTOR;
-        y_force = ((xa * y_force) + (xb * other_body->y_force)) - diff_y * Y_FACTOR;
+        x_force = ((xa * x_force) + (xb * other_body->x_force)) + diff_x * x_factor;
+        y_force = ((xa * y_force) + (xb * other_body->y_force)) - diff_y * y_factor;
 
         xa = (2 * mass) / sw;
         xb = (other_body->mass - mass) / sw;
 
-        other_body->x_force = ((xa * tmp_x_force) + (xb * other_body->x_force)) - diff_x * X_FACTOR;
-        other_body->y_force = ((xa * tmp_y_force) + (xb * other_body->y_force)) + diff_y * Y_FACTOR;
+        other_body->x_force = ((xa * tmp_x_force) + (xb * other_body->x_force)) - diff_x * x_factor;
+        other_body->y_force = ((xa * tmp_y_force) + (xb * other_body->y_force)) + diff_y * y_factor;
 
         last_collision = 0;
     }
 }
 
-void RigidBody::calculate_y_force() { y_force -= G_FORCE; }
+void RigidBody::calculate_y_force() { y_force -= g_force * sim_scale; }
 
 void RigidBody::calculate_x_force() {
-    double abs_x_force = (x_force < 0) ? -x_force : x_force;
-    if (abs_x_force < EQ_TRESH) {
+    if (fabs(x_force) > EQ_TRESH) {
+        x_force += sim_scale * ((x_force > 0) ? -air_force : air_force);
+        if ((x_force > 0) != x_force > 0) x_force = 0;
+    } else {
         x_force = 0;
-        return;
     }
-    bool force_dir = x_force > 0;
-    x_force = (x_force > 0) ? x_force - AIR_FRICTION : x_force + AIR_FRICTION;
-    if ((x_force > 0) != force_dir) x_force = 0;
 }
 
 void RigidBody::apply_rotation_force() {
-    bool rotation_dir = rotation_force > 0;
-    rotation_force += (rotation_dir) ? -AIR_FRICTION : AIR_FRICTION;
-    if (fabs(rotation_force) <= EQ_TRESH) {
-        rotation_force = 0;
-    }
+    rotation_force += sim_scale * ((rotation_force > 0) ? -air_force : air_force);
+    if (fabs(rotation_force) <= EQ_TRESH) rotation_force = 0;
 
     Coordinate* point = get_center_of_gravity();
 
